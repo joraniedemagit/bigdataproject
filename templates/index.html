@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Big Data Project</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var humans = 0;
+            var bots = 0;
+
+            // Use a "/test" namespace.
+            // An application can open a connection on multiple namespaces, and
+            // Socket.IO will multiplex all those connections on a single
+            // physical channel. If you don't care about multiple channels, you
+            // can set the namespace to an empty string.
+            namespace = '/test';
+
+            // Connect to the Socket.IO server.
+            // The connection URL has the following format:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+
+            socket.on('update_values', function(msg) {
+                console.log("updating values, bots = " + msg.bots + ", humans = " + msg.humans);
+
+                bots += parseInt(msg.bots);
+                humans += parseInt(msg.humans);
+
+                document.getElementById('bots').innerHTML = bots;
+                document.getElementById('humans').innerHTML = humans;
+
+                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+            });
+
+        });
+    </script>
+    <style>
+    @font-face {
+    font-family: "Panton";
+    src: url("{{url_for('static', filename='Panton-LightCaps.otf')}}");
+    }
+
+    body {
+        background-color: #EFEFEF;
+        color: #A9A9A9;
+        font-family: 'Panton';font-size: 22px;
+        text-align: center;
+    }
+
+    div.valueText {
+      display: inline;
+      white-space: nowrap;
+      font-size: 30px;
+    }
+    </style>
+</head>
+<body>
+    <h1>Bot Meter</h1>
+    <p>Finding bots in political events</b></p>
+    <div class="valueText">
+      Bots
+      <div id="bots">0</div>
+    </div>
+    <div style="display: inline" class="valueText">
+      Humans
+      <div id="humans">0</div>
+    </div>
+</body>
+</html>
