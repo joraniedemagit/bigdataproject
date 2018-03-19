@@ -26,7 +26,6 @@ from pyspark.streaming.kafka import KafkaUtils
 
 f = open('model.pkl', 'rb')
 clf = pickle.load(f)
-print(clf)
 f.close()
 
 def startStreaming(socketio):
@@ -53,12 +52,10 @@ def startStreaming(socketio):
             bots = preds.tolist().count(0)
             humans = preds.tolist().count(1)
 
-            print("socketio")
-            print(socketio)
+            print("Sending data to front-end")
 
             socketio.emit('update_values',
-                          {'bots': bots, 'humans': humans},
-                          namespace='/test')
+                              {'bots': bots, 'humans': humans})
 
     # Setup Spark
 
@@ -74,13 +71,13 @@ def startStreaming(socketio):
 
     #counts.pprint()
     ssc.start()
-    #ssc.awaitTerminationOrTimeout(20)
+    ssc.awaitTerminationOrTimeout(600)
     ssc.stop()
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
-async_mode = None
+async_mode = 'threading'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -90,6 +87,7 @@ thread_lock = Lock()
 
 def background_thread():
     """Example of how to send server generated events to clients."""
+    global socketio
     count = 0
     startStreaming(socketio)
     # while True:
@@ -117,9 +115,18 @@ def test_connect():
     global thread
     with thread_lock:
         if thread is None:
+            print("Starting new thread")
             thread = socketio.start_background_task(target=background_thread)
     emit('my_response', {'data': 'Connected', 'count': 0})
 
+@socketio.on('startstreaming')
+def start_streaming(data):
+    print("Starting streaming...")
+    global thread
+    with thread_lock:
+        if thread is None:
+            print("Starting new thread")
+            thread = socketio.start_background_task(target=background_thread)
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
