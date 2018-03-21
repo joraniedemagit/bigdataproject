@@ -1,51 +1,11 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Big Data Project</title>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
-    <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
-            var humans = 0;
-            var bots = 0;
-
-            // Use a "/test" namespace.
-            // An application can open a connection on multiple namespaces, and
-            // Socket.IO will multiplex all those connections on a single
-            // physical channel. If you don't care about multiple channels, you
-            // can set the namespace to an empty string.
-            namespace = '/test';
-
-            // Connect to the Socket.IO server.
-            // The connection URL has the following format:
-            //     http[s]://<domain>:<port>[/<namespace>]
-            //console.log("Connecting to " + location.protocol + '//' + document.domain + ':' + location.port + namespace);
-            var socket = io.connect(); //(location.protocol + '//' + document.domain + ':' + location.port + namespace, {reconnect: true});
-
-            //var socket = io.connect();//location.protocol + '//' + document.domain + ':' + location.port + namespace);
-
-            console.log(socket);
-
-            // Event handler for new connections.
-            // The callback function is invoked when a connection with the
-            // server is established.
-            socket.on('connect', function() {
-                socket.emit('my_event', {data: 'I\'m connected!'});
-            });
-
-            socket.on('update_values', function(msg) {
-                console.log("updating values, bots = " + msg.bots + ", humans = " + msg.humans);
-
-                bots += parseInt(msg.bots);
-                humans += parseInt(msg.humans);
-
-                document.getElementById('bots').innerHTML = bots;
-                document.getElementById('humans').innerHTML = humans;
-            });
-
-            socket.emit('startstreaming', {'data': 'Connected'});
-        });
-    </script>
     <style>
     @font-face {
     font-family: "Panton";
@@ -64,6 +24,23 @@
       white-space: nowrap;
       font-size: 30px;
     }
+
+    #chart {
+      width: 400px;
+      height: 400px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      width: 43%;
+      color: white;
+    }
+
+    .ct-series-a .ct-bar, .ct-series-a .ct-line, .ct-series-a .ct-point, .ct-series-a .ct-slice-donut {
+        stroke: #8BC34A;
+    }
+    .ct-series-b .ct-bar, .ct-series-b .ct-line, .ct-series-b .ct-point, .ct-series-b .ct-slice-donut {
+        stroke: #FF7043;
+    }
     </style>
 </head>
 <body>
@@ -77,5 +54,68 @@
       Humans
       <div id="humans">0</div>
     </div>
+
+    <br><br>
+
+    <div id="chart"></div>
+
+    <script type="text/javascript" src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var humans = 0;
+            var bots = 0;
+
+            var chartOptions = {
+              width: '500px',
+              height: '4000px'
+            };
+
+            var chart = new Chartist.Pie('#chart', {
+              series: []
+              }, {
+              donut: true,
+              donutWidth: 60,
+              startAngle: 270,
+              total: 200,
+              showLabel: true
+            }, chartOptions);
+
+            namespace = '/test';
+
+            var socket = io.connect(); //(location.protocol + '//' + document.domain + ':' + location.port + namespace, {reconnect: true});
+
+            console.log(socket);
+
+            // Event handler for new connections.
+            // The callback function is invoked when a connection with the
+            // server is established.
+            socket.on('connect', function() {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+            });
+
+            socket.on('update_values', function(msg) {
+                console.log("updating values, bots = " + msg.bots + ", humans = " + msg.humans);
+
+                bots += parseInt(msg.bots);
+                humans += parseInt(msg.humans);
+
+                document.getElementById('bots').innerHTML = bots;
+                document.getElementById('humans').innerHTML = humans;
+
+                botRatio = (bots / (bots + humans)) * 100
+                humanRatio = (humans / (bots + humans)) * 100
+
+                console.log("Bot ratio = " + botRatio + ", Human ratio = " + humanRatio);
+
+                data = { labels: ['Humans', 'Bots'], series: [humanRatio, botRatio]};
+
+                chart.update(data);
+            });
+
+            socket.emit('startstreaming', {'data': 'Connected'});
+        });
+    </script>
 </body>
 </html>

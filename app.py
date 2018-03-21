@@ -61,7 +61,7 @@ def startStreaming(socketio):
 
     sc = SparkContext.getOrCreate()#(appName="PythonStreamingDirectKafkaWordCount")
 
-    ssc = StreamingContext(sc, 2)
+    ssc = StreamingContext(sc, 0.1)
 
     kvs = KafkaUtils.createDirectStream(ssc, ["tweet_stream"], {'metadata.broker.list': "localhost:9092"})
 
